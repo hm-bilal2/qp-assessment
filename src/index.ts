@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import adminRouter from "./routes/adminRoutes";
 import commonRoutes from "./routes/commonRoutes"
+import userRoutes from "./routes/userRoutes"
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use("/api", commonRoutes);
 app.use("/api", adminRouter);
+app.use('/api',userRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

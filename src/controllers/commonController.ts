@@ -3,7 +3,9 @@ import { generateToken } from "../auth/jwt";
 import db from "../database/db";
 import bcrypt from "bcrypt";
 import { User } from "../models/User";
+import { GroceryItem } from "../models/GroceryItem";
 import { validateUser } from "../helpers/userHelpers";
+import { ModifiedReq } from "../models/ModifiedRequest";
 
 export const createUser = async (req: Request, res: Response) => {
   try {
@@ -72,6 +74,36 @@ export const login = async (req: Request, res: Response) => {
 
     const token: string = generateToken(username, password, user.role);
     return res.json({ token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+export const viewAllItems = async (req: Request, res: Response) => {
+  try {
+    const { username } = (req as ModifiedReq).decoded;
+
+    const user: User | undefined = await db("users")
+      .select()
+      .where("username", username)
+      .first();
+
+    if (!user) {
+      return res.status(400).json("user not found");
+    }
+
+    const groceryItems: GroceryItem[] = await db("groceryItems");
+
+    res.status(200).json(
+      user.role === "admin"
+        ? groceryItems
+        : groceryItems.map(({ name, brand, price }) => ({
+            name,
+            brand,
+            price,
+          }))
+    );
   } catch (err) {
     console.error(err);
     res.status(500).send("Internal Server Error");

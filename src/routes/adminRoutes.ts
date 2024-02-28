@@ -5,6 +5,6 @@ import * as adminController from "../controllers/adminController";
 const router = express.Router();
 
 router.post("/addItem", authenticateToken, adminController.addItem);
-router.post("/viewAllItems", authenticateToken, adminController.viewAllItems)
+router.post("/removeItems", authenticateToken, adminController.removeItems)
 
 export default router;
