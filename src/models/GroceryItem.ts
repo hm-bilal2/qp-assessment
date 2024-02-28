@@ -7,7 +7,7 @@ export interface GroceryItem {
   brand: string;
   price: number;
   quantity: number;
-  lastUpdatedBy: User;
+  lastUpdatedBy: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
