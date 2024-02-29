@@ -110,7 +110,9 @@ export const removeItems = async (req: Request, res: Response) => {
                 groceryItemInDb.quantity - groceryItem.quantity
               )
               .where("barcodeNumber", groceryItem.barcodeNumber);
-              console.log(`Item ${groceryItemInDb.barcodeNumber} quantity changed`);
+            console.log(
+              `Item ${groceryItemInDb.barcodeNumber} quantity changed`
+            );
           } else {
             await trx("groceryItems")
               .where("barcodeNumber", groceryItem.barcodeNumber)
@@ -130,7 +132,85 @@ export const removeItems = async (req: Request, res: Response) => {
       "Grocery item deleted/updated quantity successfully within transaction"
     );
   } catch (error) {
-    console.error("Error deleting/updating grocery item within transaction:", error);
+    console.error(
+      "Error deleting/updating grocery item within transaction:",
+      error
+    );
+    if (trx) {
+      await trx.rollback(error);
+    }
+    return res.status(400).send(error);
+  }
+};
+
+export const modifyItems = async (req: Request, res: Response) => {
+  const { username, role } = (req as ModifiedReq).decoded;
+
+  if (role !== "admin") {
+    return res.status(400).json({
+      message: "Unauthorized",
+    });
+  }
+
+  const user: User | undefined = await db("users")
+    .select()
+    .where("username", username)
+    .first();
+
+  if (!user) {
+    return res.status(400).json("user not found");
+  }
+
+  const { items } = req.body;
+
+  let unvailableItems: String[] = [];
+  let availableItems: String[] = [];
+
+  let trx: any | undefined = undefined;
+
+  try {
+    trx = await db.transaction();
+
+    await Promise.all(
+      items.map(async (groceryItem: any) => {
+        const groceryItemInDb: GroceryItem | undefined = await trx(
+          "groceryItems"
+        )
+          .select()
+          .where("barcodeNumber", groceryItem.barcodeNumber)
+          .forUpdate()
+          .first();
+
+        if (groceryItemInDb) {
+          const fields: any = {};
+
+          groceryItem.fields.forEach((field: any) => {
+            fields[field.fieldName] = field.newValue;
+          });
+
+          await trx("groceryItems")
+            .update(fields)
+            .where("barcodeNumber", groceryItem.barcodeNumber);
+
+          availableItems.push();
+
+          console.log(`Item ${groceryItemInDb.barcodeNumber} quantity changed`);
+        } else {
+          unvailableItems.push(groceryItem.barcodeNumber);
+        }
+      })
+    );
+
+    await trx.commit();
+
+    res.status(200).json({
+      message: `Successfully modified ${availableItems}. Unavailable items: ${unvailableItems}`,
+    });
+  } catch (error) {
+    console.error(
+      "Error deleting/updating grocery item within transaction:",
+      error
+    );
     if (trx) {
       await trx.rollback(error);
     }
