@@ -8,12 +8,6 @@ export const addItems = async (req: Request, res: Response) => {
   try {
     const { username, role } = (req as ModifiedReq).decoded;
 
-    if (role !== "admin") {
-      return res.status(400).json({
-        message: "Unauthorized",
-      });
-    }
-
     const user: User | undefined = await db("users")
       .select()
       .where("username", username)
@@ -21,6 +15,12 @@ export const addItems = async (req: Request, res: Response) => {
 
     if (!user) {
       return res.status(400).json("user not found");
+    }
+
+    if (role !== "admin") {
+      return res.status(400).json({
+        message: "Unauthorized",
+      });
     }
 
     const { groceryItems }: { groceryItems: GroceryItem[] } = req.body;
@@ -44,11 +44,14 @@ export const addItems = async (req: Request, res: Response) => {
             await trx("groceryItems")
               .update({
                 quantity: groceryItemInDb.quantity + groceryItem.quantity,
-                lastUpdatedBy: user.id
+                lastUpdatedBy: user.id,
               })
               .where("barcodeNumber", groceryItem.barcodeNumber);
           } else {
-            await trx("groceryItems").insert({...groceryItem, lastUpdatedBy: user.id});
+            await trx("groceryItems").insert({
+              ...groceryItem,
+              lastUpdatedBy: user.id,
+            });
           }
         })
       );
@@ -77,12 +80,6 @@ export const addItems = async (req: Request, res: Response) => {
 export const removeItems = async (req: Request, res: Response) => {
   const { username, role } = (req as ModifiedReq).decoded;
 
-  if (role !== "admin") {
-    return res.status(400).json({
-      message: "Unauthorized",
-    });
-  }
-
   const user: User | undefined = await db("users")
     .select()
     .where("username", username)
@@ -90,6 +87,12 @@ export const removeItems = async (req: Request, res: Response) => {
 
   if (!user) {
     return res.status(400).json("user not found");
+  }
+
+  if (role !== "admin") {
+    return res.status(400).json({
+      message: "Unauthorized",
+    });
   }
 
   const { groceryItems } = req.body;
@@ -110,7 +113,10 @@ export const removeItems = async (req: Request, res: Response) => {
           .first();
 
         if (groceryItemInDb) {
-          if (groceryItemInDb.quantity &&  groceryItemInDb.quantity > groceryItem.quantity) {
+          if (
+            groceryItemInDb.quantity &&
+            groceryItemInDb.quantity > groceryItem.quantity
+          ) {
             await trx("groceryItems")
               .update(
                 "quantity",
@@ -153,12 +159,6 @@ export const removeItems = async (req: Request, res: Response) => {
 export const modifyItems = async (req: Request, res: Response) => {
   const { username, role } = (req as ModifiedReq).decoded;
 
-  if (role !== "admin") {
-    return res.status(400).json({
-      message: "Unauthorized",
-    });
-  }
-
   const user: User | undefined = await db("users")
     .select()
     .where("username", username)
@@ -166,6 +166,12 @@ export const modifyItems = async (req: Request, res: Response) => {
 
   if (!user) {
     return res.status(400).json("user not found");
+  }
+
+  if (role !== "admin") {
+    return res.status(400).json({
+      message: "Unauthorized",
+    });
   }
 
   const { items } = req.body;
@@ -199,7 +205,7 @@ export const modifyItems = async (req: Request, res: Response) => {
             .update(fields)
             .where("barcodeNumber", groceryItem.barcodeNumber);
 
-          availableItems.push();
+          availableItems.push(groceryItem.barcodeNumber);
 
           console.log(`Item ${groceryItemInDb.barcodeNumber} quantity changed`);
         } else {
@@ -211,7 +217,7 @@ export const modifyItems = async (req: Request, res: Response) => {
     await trx.commit();
 
     res.status(200).json({
-      message: `Successfully modified ${availableItems}. Unavailable items: ${unvailableItems}`,
+      message: `Successfully modified [${availableItems}]. Unavailable items: [${unvailableItems}]`,
     });
   } catch (error) {
     console.error(

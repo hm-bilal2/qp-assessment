@@ -4,7 +4,7 @@ import { authenticateToken } from "../auth/jwt";
 
 const router = express.Router();
 
-router.post("/createUser", commonController.createUser);
+router.post("/signup", commonController.signup);
 router.post("/login", commonController.login);
 router.post("/viewAllItems", authenticateToken, commonController.viewAllItems);
 

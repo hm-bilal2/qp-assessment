@@ -7,14 +7,14 @@ import { GroceryItem } from "../models/GroceryItem";
 import { validateUser } from "../helpers/userHelpers";
 import { ModifiedReq } from "../models/ModifiedRequest";
 
-export const createUser = async (req: Request, res: Response) => {
+export const signup = async (req: Request, res: Response) => {
   try {
     const { user }: { user: User } = req.body;
 
     const isUserInvalid: Object | null = validateUser(user);
 
     if (isUserInvalid) {
-      return res.status(400).json(Object);
+      return res.status(400).json(isUserInvalid);
     }
 
     const encryptedPassword: String = bcrypt.hashSync(
