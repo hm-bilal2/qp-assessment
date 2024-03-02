@@ -4,7 +4,7 @@ import * as adminController from "../controllers/adminController";
 
 const router = express.Router();
 
-router.post("/addItem", authenticateToken, adminController.addItem);
+router.post("/addItems", authenticateToken, adminController.addItems);
 router.post("/removeItems", authenticateToken, adminController.removeItems);
 router.post("/modifyItems", authenticateToken, adminController.modifyItems);
 

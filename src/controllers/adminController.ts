@@ -4,7 +4,7 @@ import { ModifiedReq } from "../models/ModifiedRequest";
 import { User } from "../models/User";
 import { GroceryItem } from "../models/GroceryItem";
 
-export const addItem = async (req: Request, res: Response) => {
+export const addItems = async (req: Request, res: Response) => {
   try {
     const { username, role } = (req as ModifiedReq).decoded;
 
@@ -23,33 +23,40 @@ export const addItem = async (req: Request, res: Response) => {
       return res.status(400).json("user not found");
     }
 
-    const { groceryItem }: { groceryItem: GroceryItem } = req.body;
-    groceryItem.lastUpdatedBy = user.id;
+    const { groceryItems }: { groceryItems: GroceryItem[] } = req.body;
 
     let trx: any | undefined = undefined;
 
     try {
       trx = await db.transaction();
 
-      const groceryItemInDb: GroceryItem | undefined = await trx("groceryItems")
-        .select()
-        .where("barcodeNumber", groceryItem.barcodeNumber)
-        .forUpdate()
-        .first();
+      await Promise.all(
+        groceryItems.map(async (groceryItem: any) => {
+          const groceryItemInDb: GroceryItem | undefined = await trx(
+            "groceryItems"
+          )
+            .select()
+            .where("barcodeNumber", groceryItem.barcodeNumber)
+            .forUpdate()
+            .first();
 
-      if (groceryItemInDb) {
-        await trx("groceryItems")
-          .update("quantity", groceryItemInDb.quantity + groceryItem.quantity)
-          .where("barcodeNumber", groceryItem.barcodeNumber);
-      } else {
-        await trx("groceryItems").insert(groceryItem);
-      }
-
+          if (groceryItemInDb) {
+            await trx("groceryItems")
+              .update({
+                quantity: groceryItemInDb.quantity + groceryItem.quantity,
+                lastUpdatedBy: user.id
+              })
+              .where("barcodeNumber", groceryItem.barcodeNumber);
+          } else {
+            await trx("groceryItems").insert({...groceryItem, lastUpdatedBy: user.id});
+          }
+        })
+      );
       await trx.commit();
 
       res.status(200).json({
         message: "Successfully added item(s)",
-        groceryItem,
+        groceryItems,
       });
       console.log(
         "Grocery item inserted/updated successfully within transaction"
@@ -103,7 +110,7 @@ export const removeItems = async (req: Request, res: Response) => {
           .first();
 
         if (groceryItemInDb) {
-          if (groceryItemInDb.quantity > groceryItem.quantity) {
+          if (groceryItemInDb.quantity &&  groceryItemInDb.quantity > groceryItem.quantity) {
             await trx("groceryItems")
               .update(
                 "quantity",

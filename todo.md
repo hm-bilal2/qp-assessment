@@ -1,4 +1,4 @@
 1. Add more validations
-2. admin/addItem -> admin/addItems
-3. admin/updateItem
-4. modifyItems -> show resultant item list
+2. createUser -> signup
+3. src/controllers/adminController.ts --> ln 73 change
+4. src/controllers/adminController.t --> remove , item not in db, mssg user
