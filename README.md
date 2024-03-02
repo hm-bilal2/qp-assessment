@@ -29,7 +29,7 @@ https://api.postman.com/collections/6819148-11d8c3fd-f0c0-48af-b7f4-ff398b1d6886
         "username": "string",
         "password": "string",
         "name": "string",
-        "role": "string"
+        "role": "string" [user,admin] (Defaulting to user)
     }
 }
 ```
