@@ -1,0 +1,45 @@
+services:
+  mysqldb:
+    container_name: mysqlcontainer
+    command: --default-authentication-plugin=mysql_native_password
+    image: mysql:8.0
+    restart: always
+    volumes: 
+      - ./src/database/dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
+    ports:
+      - 3307:3306
+    expose:
+      - 3307
+    environment:
+      MYSQL_ROOT_PASSWORD: 'password'
+      MYSQL_USER: admin
+      MYSQL_DATABASE: grocery_db
+      MYSQL_PASSWORD: 'password'
+      SERVICE_NAME: mysqldb
+    networks:
+      - groceryappnetwork
+
+  nodeapp:
+    container_name: groceryappcontainer
+    build: .
+    image: groceryappimg:v1
+    ports:
+      - 4000:4000
+    expose:
+      - 4000
+    depends_on: 
+      - mysqldb
+    environment:
+      PORT: 4000
+      DB_HOST: mysqldb
+      DB_USER: admin
+      DB_PASSWORD: 'password'
+      DB_NAME: grocery_db
+      SALT: 10
+      JWTSECRET: mySecret
+    networks:
+      - groceryappnetwork
+
+networks:
+  groceryappnetwork:
+    driver: bridge
