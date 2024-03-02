@@ -1,14 +1,10 @@
 FROM node:16.14.0
 
-WORKDIR /usr/code
+WORKDIR /app
 
-COPY package.json .
+COPY . /app
 
 RUN npm install
-
-COPY . .
-
-ENV SERVER_PORT 4000
 EXPOSE 4000
 
 CMD ["npm", "run", "dev"]
